@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Update Apartment Status{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-success mb-3">Update Status - {{ apartment.unit_number }}</h2>
+    <div class="card shadow-sm p-3">
+        <form method="POST">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label">Status</label>
+                <select class="form-select" name="status" required>
+                    <option value="Vacant" {% if apartment.status == 'Vacant' %}selected{% endif %}>Vacant</option>
+                    <option value="Occupied" {% if apartment.status == 'Occupied' %}selected{% endif %}>Occupied</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Tenant Name (if Occupied)</label>
+                <input type="text" class="form-control" name="tenant_name" value="{{ apartment.tenant_name }}">
+            </div>
+            <button type="submit" class="btn btn-success">Update Status</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

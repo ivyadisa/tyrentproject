@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}{{ property.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="text-success">{{ property.title }}</h2>
+        <a href="{% url 'add_apartment' property.pk %}" class="btn btn-success">Add Apartment</a>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <img src="{{ property.main_image.url }}" class="img-fluid rounded shadow-sm">
+        </div>
+        <div class="col-md-6">
+            <p>{{ property.description }}</p>
+            <p>Status: 
+                {% if property.status == 'Vacant' %}
+                    <span class="badge" style="background-color:#2E8B57;">Vacant</span>
+                {% else %}
+                    <span class="badge bg-danger">Occupied</span>
+                {% endif %}
+            </p>
+            <p>Total Units: {{ property.total_units }}</p>
+            <p>Vacancy Rate: {{ property.vacancy_rate|floatformat:1 }}%</p>
+            <p>Occupancy Rate: {{ property.occupancy_rate|floatformat:1 }}%</p>
+        </div>
+    </div>
+
+    <h4 class="text-success mb-3">Apartments</h4>
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle">
+            <thead class="table-success">
+                <tr>
+                    <th>Unit</th>
+                    <th>Rent (KES)</th>
+                    <th>Status</th>
+                    <th>Tenant</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for apt in apartments %}
+                <tr>
+                    <td>{{ apt.unit_number }}</td>
+                    <td>{{ apt.rent }}</td>
+                    <td>
+                        {% if apt.status == 'Vacant' %}
+                            <span class="badge" style="background-color:#2E8B57;">Vacant</span>
+                        {% else %}
+                            <span class="badge bg-danger">Occupied</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ apt.tenant_name }}</td>
+                    <td class="d-flex gap-1 flex-wrap">
+                        <a href="{% url 'edit_apartment' apt.pk %}" class="btn btn-warning btn-sm flex-grow-1">Edit</a>
+                        <a href="{% url 'update_apartment_status' apt.pk %}" class="btn btn-success btn-sm flex-grow-1">Update Status</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-muted text-center">No apartments added yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
