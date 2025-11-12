@@ -5,6 +5,9 @@ from django.http import HttpResponse
 from .forms import CustomAuthenticationForm
 from .models import User, LandlordProfile, TenantProfile
 from .models import VacantHouse
+from bookings.models import Booking
+
+
 
 
 def register(request):
@@ -20,7 +23,7 @@ def register(request):
         if password1 != password2:
             return render(request, 'accounts/register.html', {'error': 'Passwords do not match'})
 
-        # Create user
+        
         user = User.objects.create_user(
             username=username,
             email=email,
@@ -30,7 +33,6 @@ def register(request):
             role=role
         )
 
-        # Create empty profile based on role
         if role == 'LANDLORD':
             LandlordProfile.objects.create(user=user)
         elif role == 'TENANT':
@@ -77,10 +79,9 @@ def tenant_dashboard(request):
 
 @login_required
 def landlord_dashboard(request):
-    landlord = request.user.landlord_profile  # your landlord profile
+    landlord = request.user.landlord_profile  
     houses = VacantHouse.objects.filter(landlord=landlord)
 
-    # Handle POST request for uploading a new house
     if request.method == "POST":
         title = request.POST.get('title')
         description = request.POST.get('description')
@@ -107,18 +108,15 @@ def landlord_dashboard(request):
 @login_required
 def landlord_setup(request):
     if request.user.role != 'LANDLORD':
-        return redirect('home')  # only landlords can access
+        return redirect('home')  
 
-    # Check if profile already exists
     try:
         landlord_profile = request.user.landlord_profile
-        # If it exists, redirect to dashboard
         return redirect('landlord_dashboard')
     except LandlordProfile.DoesNotExist:
         pass
 
     if request.method == 'POST':
-        # Create landlord profile
         LandlordProfile.objects.create(
             user=request.user,
             property_name=request.POST.get('property_name'),
@@ -148,3 +146,17 @@ def upload_house(request):
         )
         return redirect('landlord_dashboard')
     return redirect('landlord_dashboard')
+
+@login_required
+def tenant_dashboard(request):
+    if request.user.role != "TENANT":
+        return redirect('home')  
+
+    tenant_profile = request.user.tenant_profile
+    bookings = Booking.objects.filter(tenant=request.user).order_by('-created_at')
+
+    context = {
+        'tenant': tenant_profile,
+        'bookings': bookings
+    }
+    return render(request, 'accounts/tenant_dashboard.html', context)

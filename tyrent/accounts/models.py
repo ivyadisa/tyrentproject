@@ -93,7 +93,7 @@ def house_image_upload_path(instance, filename):
 
 class VacantHouse(models.Model):
     landlord = models.ForeignKey(
-        'accounts.LandlordProfile',  # Assuming your landlord profile model is named LandlordProfile
+        'accounts.LandlordProfile',  
         on_delete=models.CASCADE,
         related_name='houses'
     )

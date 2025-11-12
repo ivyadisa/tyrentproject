@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Apartment {{ apartment.unit_number }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm p-4">
+        <div class="row">
+            <div class="col-md-6">
+                {% if apartment.image %}
+                    <img src="{{ apartment.image.url }}" class="img-fluid rounded shadow-sm" alt="Apartment Image">
+                {% else %}
+                    <img src="{% static 'images/no-image.jpg' %}" class="img-fluid rounded shadow-sm" alt="No Image">
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <h3 class="text-success mb-3">Apartment {{ apartment.unit_number }}</h3>
+                <p><strong>Property:</strong> {{ apartment.property.title }}</p>
+                <p><strong>Location:</strong> {{ apartment.location }}</p>
+                <p><strong>Bedrooms:</strong> {{ apartment.bedrooms }}</p>
+                <p><strong>Rent:</strong> KES {{ apartment.rent|floatformat:0 }}</p>
+                <p><strong>Status:</strong> 
+                    {% if apartment.status == 'Vacant' %}
+                        <span class="badge bg-success">Vacant</span>
+                    {% else %}
+                        <span class="badge bg-danger">Occupied</span>
+                    {% endif %}
+                </p>
+
+                {% if apartment.status == 'Vacant' %}
+                    <a href="{% url 'book_apartment' apartment.id %}" class="btn btn-primary">Book Apartment</a>
+                {% else %}
+                    <button class="btn btn-secondary" disabled>Currently Occupied</button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -8,24 +8,35 @@
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <!-- Custom CSS -->
+    <!-- Animate.css & Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"/>
+
     <style>
         html {
             scroll-behavior: smooth;
         }
 
         body {
-            display: flex;
-            flex-direction: column;
-            background-color: #f8f9fa;
-            color: #212529;
-            margin: 0;
-        }
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh; 
+        background-color: #f8f9fa;
+        color: #212529;
+        margin: 0;
+        padding-top: 80px; 
+    }
+
+    main {
+        flex: 1; 
+    }
+
 
         /* --- Navbar --- */
         .navbar {
-            background-color: #3F704D; /* Elegant green tone that complements #2E8B57 */
+            background-color: #3F704D; 
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            height: 80px;
         }
 
         .navbar-brand, .nav-link {
@@ -34,7 +45,7 @@
         }
 
         .navbar-brand:hover, .nav-link:hover {
-            color: #FFD700 !important; /* Gold hover accent */
+            color: #FFD700 !important; 
         }
 
         .btn-primary {
@@ -51,8 +62,14 @@
             flex: 1;
         }
 
+        /* General section spacing */
         section {
             padding: 100px 0;
+        }
+
+        
+        main > section:first-child {
+            padding-top: 0;
         }
 
         footer {
@@ -63,7 +80,7 @@
             margin-top: auto;
         }
 
-        /* Logout form inline with navbar links */
+        /* Logout form inline */
         .logout-form {
             display: inline;
         }
@@ -80,40 +97,38 @@
         .logout-form button:hover {
             text-decoration: underline;
         }
+
+        /* Fix for mobile menu spacing */
+        @media (max-width: 992px) {
+            body {
+                padding-top: 70px;
+            }
+            .navbar {
+                height: auto;
+            }
+        }
     </style>
 </head>
 <body>
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="#">Tyrent</a>
+            <a class="navbar-brand fw-bold" href="/">Tyrent</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <!-- Public Links -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="#home">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#about">About</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#contact">Contact</a>
-                    </li>
+                <ul class="navbar-nav ms-auto align-items-lg-center">
+                    <li class="nav-item"><a class="nav-link" href="#home">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
 
-                    <!-- Auth Links -->
                     {% if user.is_authenticated %}
                         {% if user.role == 'LANDLORD' %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'landlord_dashboard' %}">Dashboard</a>
-                            </li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'landlord_dashboard' %}">Dashboard</a></li>
                         {% elif user.role == 'TENANT' %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'tenant_dashboard' %}">Dashboard</a>
-                            </li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'tenant_dashboard' %}">Dashboard</a></li>
                         {% endif %}
                         <li class="nav-item">
                             <form method="POST" action="{% url 'logout' %}" class="logout-form">

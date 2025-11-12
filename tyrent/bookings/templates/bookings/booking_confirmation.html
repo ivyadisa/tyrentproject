@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Booking Confirmation{% endblock %}
+{% block content %}
+<div class="container mt-5 text-center">
+    <div class="alert alert-success">
+        <h3>Booking Request Sent!</h3>
+        <p>Thank you {{ booking.tenant.first_name }}. Your booking for
+        <strong>{{ booking.apartment.property.title }}</strong> has been received.</p>
+        <p>Status: <strong>{{ booking.status }}</strong></p>
+        <a href="{% url 'booking_list' %}" class="btn btn-primary mt-3">View My Bookings</a>
+    </div>
+</div>
+{% endblock %}

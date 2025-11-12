@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Booking Details{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <div class="card p-4 shadow-sm">
+        <h3>Booking for {{ booking.apartment.property.title }}</h3>
+        <p><strong>Status:</strong> {{ booking.status }}</p>
+        <p><strong>Start Date:</strong> {{ booking.start_date }}</p>
+        <p><strong>End Date:</strong> {{ booking.end_date }}</p>
+        <p><strong>Message:</strong> {{ booking.message }}</p>
+        <p><strong>Created on:</strong> {{ booking.created_at }}</p>
+    </div>
+</div>
+{% endblock %}

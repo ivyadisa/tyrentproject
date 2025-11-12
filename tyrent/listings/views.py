@@ -1,12 +1,15 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Q, Avg
 from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
 from .models import Property, Apartment
 from .forms import PropertyForm, ApartmentForm
 
 # ---------- HOME VIEW ----------
 def home(request):
     """Homepage with featured properties, stats, and search."""
+
+    # Calculate total stats
     total_properties = Property.objects.count()
     total_units = Apartment.objects.count()
     occupied_units = Apartment.objects.filter(status='Occupied').count()
@@ -15,8 +18,11 @@ def home(request):
     occupancy_rate = round((occupied_units / total_units) * 100, 1) if total_units > 0 else 0
     vacancy_rate = 100 - occupancy_rate if total_units > 0 else 0
 
-    # Show some featured properties on home page
+    # Featured properties (first 6)
     properties = Property.objects.all()[:6]
+    # Add average rent to each property
+    for prop in properties:
+        prop.avg_rent = prop.apartments.aggregate(avg_rent=Avg('rent'))['avg_rent'] or 0
 
     context = {
         'total_properties': total_properties,
@@ -25,36 +31,39 @@ def home(request):
         'vacancy_rate': vacancy_rate,
         'properties': properties,
     }
-    return render(request, 'home.html', context)
+    return render(request, 'core/home.html', context)
 
 # ---------- PROPERTY VIEWS ----------
 def property_list(request):
-    """Show all properties or search results (public)."""
+    """Show all properties or search results."""
     location = request.GET.get('location', '')
     property_type = request.GET.get('property_type', '')
     max_price = request.GET.get('max_price', '')
 
     properties = Property.objects.all()
+
     if location:
         properties = properties.filter(address__icontains=location)
     if property_type:
-        properties = properties.filter(property_type__icontains=property_type)
+        properties = properties.filter(property_type__iexact=property_type.capitalize())
     if max_price:
-        properties = properties.filter(apartments__rent__lte=max_price)
+        try:
+            max_price = float(max_price)
+            properties = [p for p in properties if (p.apartments.aggregate(avg_rent=Avg('rent'))['avg_rent'] or 0) <= max_price]
+        except ValueError:
+            pass
 
-    properties = properties.distinct()
+    # Add avg_rent and a simple status field
+    for prop in properties:
+        prop.avg_rent = prop.apartments.aggregate(avg_rent=Avg('rent'))['avg_rent'] or 0
+        prop.status = "Vacant" if prop.apartments.filter(status="Vacant").exists() else "Occupied"
 
-    return render(request, 'listings/property_list.html', {'properties': properties})
+    return render(request, 'listings/property_list.html', {
+        'properties': properties,
+        'user': request.user
+    })
 
-def property_detail(request, pk):
-    """Show a single property and its apartments (public)."""
-    property = get_object_or_404(Property, pk=pk)
-    apartments = property.apartments.all()
-    return render(request, 'listings/property_detail.html', {'property': property, 'apartments': apartments})
-
-# ---------- PROTECTED VIEWS (ONLY FOR LOGGED-IN USERS) ----------
-from django.contrib.auth.decorators import login_required
-
+# ---------- PROPERTY MANAGEMENT (LOGIN REQUIRED) ----------
 @login_required
 def add_property(request):
     if request.method == 'POST':
@@ -84,7 +93,7 @@ def delete_property(request, pk):
     property.delete()
     return redirect('property_list')
 
-# Apartment views remain login required
+# ---------- APARTMENT MANAGEMENT (LOGIN REQUIRED) ----------
 @login_required
 def add_apartment(request, property_pk):
     property = get_object_or_404(Property, pk=property_pk)
@@ -123,28 +132,53 @@ def update_apartment_status(request, pk):
         return redirect('property_detail', pk=apartment.property.pk)
     return render(request, 'listings/update_apartment_status.html', {'apartment': apartment})
 
+@login_required
+def property_detail(request, pk):
+    property = get_object_or_404(Property, pk=pk)
+    apartments = property.apartments.all()  
+    property.avg_rent = property.apartments.aggregate(avg_rent=Avg('rent'))['avg_rent'] or 0
+    property.status = "Vacant" if property.apartments.filter(status="Vacant").exists() else "Occupied"
+
+    context = {
+        'property': property,
+        'apartments': apartments,
+    }
+    return render(request, 'listings/property_detail.html', context)
+
+
+# ---------- AJAX SEARCH ----------
 def search_properties(request):
-    """AJAX search for properties."""
+    """AJAX search for properties by location, type, max price."""
+
     location = request.GET.get('location', '')
     property_type = request.GET.get('property_type', '')
     max_price = request.GET.get('max_price', '')
 
     properties = Property.objects.all()
+
     if location:
         properties = properties.filter(address__icontains=location)
     if property_type:
-        properties = properties.filter(property_type__icontains=property_type)
+        properties = properties.filter(property_type__iexact=property_type.capitalize())
     if max_price:
-        properties = properties.filter(apartments__rent__lte=max_price)
+        try:
+            max_price = float(max_price)
+            properties = [p for p in properties if (p.apartments.aggregate(avg_rent=Avg('rent'))['avg_rent'] or 0) <= max_price]
+        except ValueError:
+            pass
 
-    properties = properties.distinct()
     results = [{
         'id': p.id,
         'title': p.title,
         'location': p.address,
         'main_image': p.main_image.url if p.main_image else '',
-        'average_rent': p.apartments.aggregate(Avg('rent'))['rent__avg'] or 0,
+        'average_rent': p.apartments.aggregate(avg_rent=Avg('rent'))['avg_rent'] or 0,
     } for p in properties]
 
     return JsonResponse({'results': results})
+
+@login_required
+def apartment_detail(request, pk):
+    apartment = get_object_or_404(Apartment, pk=pk)
+    return render(request, 'listings/apartment_detail.html', {'apartment': apartment})
 

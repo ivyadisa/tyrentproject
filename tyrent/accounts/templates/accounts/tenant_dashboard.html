@@ -1,4 +1,140 @@
-<h1>Welcome, {{ tenant.user.full_name }}</h1>
-<p>Occupation: {{ tenant.occupation }}</p>
-<p>Current Address: {{ tenant.current_address }}</p>
-<p>Preferred Location: {{ tenant.preferred_location }}</p>
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Tenant Dashboard{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background-color: #f7f9fb;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .dashboard-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .dashboard-header h2 {
+        font-weight: 600;
+        color: #1e3a34;
+    }
+
+    .card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-title {
+        color: #0d6efd;
+        font-weight: 600;
+    }
+
+    .btn-primary, .btn-success {
+        border-radius: 10px;
+        padding: 8px 20px;
+        font-weight: 500;
+    }
+
+    .profile-section, .bookings-section {
+        margin-bottom: 40px;
+    }
+
+    .profile-info p {
+        margin-bottom: 8px;
+        color: #333;
+    }
+
+    .no-bookings {
+        padding: 30px 0;
+        color: #6c757d;
+        font-style: italic;
+    }
+
+    .book-now-section {
+        text-align: center;
+        margin-top: 40px;
+    }
+</style>
+
+<div class="container mt-5 mb-5">
+    <!-- Welcome Section -->
+    <div class="dashboard-header">
+        <h2>Welcome back, {{ tenant.user.first_name|default:tenant.user.username }} 👋</h2>
+        <p class="text-muted">Here’s your dashboard summary</p>
+    </div>
+
+    <div class="row g-4">
+        <!-- Profile Section -->
+        <div class="col-lg-4 col-md-12">
+            <div class="card profile-section">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">My Profile</h5>
+                    <div class="profile-info">
+                        <p><strong>Email:</strong> {{ tenant.user.email }}</p>
+                        <p><strong>Phone:</strong> {{ tenant.phone|default:"Not set" }}</p>
+                        <p><strong>Address:</strong> {{ tenant.current_address|default:"Not set" }}</p>
+                        <p><strong>Preferred Location:</strong> {{ tenant.preferred_location|default:"Not set" }}</p>
+                        <p><strong>Occupation:</strong> {{ tenant.occupation|default:"Not set" }}</p>
+                    </div>
+                    <a href="#" class="btn btn-outline-primary w-100 mt-3">Edit Profile</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bookings Section -->
+        <div class="col-lg-8 col-md-12">
+            <div class="card bookings-section">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">My Bookings</h5>
+                    {% if bookings %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-success">
+                                    <tr>
+                                        <th>Apartment</th>
+                                        <th>Property</th>
+                                        <th>Status</th>
+                                        <th>Start Date</th>
+                                        <th>End Date</th>
+                                        <th>Booked On</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for booking in bookings %}
+                                    <tr>
+                                        <td>{{ booking.apartment.title }}</td>
+                                        <td>{{ booking.apartment.property.title }}</td>
+                                        <td><span class="badge bg-info text-dark">{{ booking.status }}</span></td>
+                                        <td>{{ booking.start_date }}</td>
+                                        <td>{{ booking.end_date|default:"N/A" }}</td>
+                                        <td>{{ booking.created_at|date:"d M Y" }}</td>
+                                        <td>
+                                            <a href="{% url 'booking_detail' booking.id %}" class="btn btn-sm btn-primary">
+                                                View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center no-bookings">
+                            <p>You have no bookings yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Book Now Section -->
+    <div class="book-now-section">
+        <a href="{% url 'property_list' %}" class="btn btn-success btn-lg">
+            🏠 Browse & Book Properties
+        </a>
+    </div>
+</div>
+{% endblock %}

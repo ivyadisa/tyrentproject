@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}My Bookings{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center mb-4">My Bookings</h2>
+
+    {% if bookings %}
+    <table class="table table-bordered table-striped">
+        <thead class="table-success">
+            <tr>
+                <th>Apartment</th>
+                <th>Property</th>
+                <th>Status</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Booked On</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for booking in bookings %}
+            <tr>
+                <td>{{ booking.apartment.unit_number }}</td>
+                <td>{{ booking.apartment.property.title }}</td>
+                <td>
+                    {% if booking.status == "CONFIRMED" %}
+                        <span class="badge bg-success">{{ booking.status }}</span>
+                    {% elif booking.status == "PENDING" %}
+                        <span class="badge bg-warning text-dark">{{ booking.status }}</span>
+                    {% else %}
+                        <span class="badge bg-danger">{{ booking.status }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ booking.start_date }}</td>
+                <td>{{ booking.end_date }}</td>
+                <td>{{ booking.created_at|date:"Y-m-d" }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <div class="alert alert-info text-center">
+            You have no bookings yet.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

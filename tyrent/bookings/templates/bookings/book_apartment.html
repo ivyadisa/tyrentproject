@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Book Apartment{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center mb-4 text-primary">Book Apartment</h2>
+
+    <div class="card shadow-sm p-4">
+        <h4>{{ apartment.property.title }}</h4>
+        <p><strong>Location:</strong> {{ apartment.property.location }}</p>
+        <p><strong>Rent:</strong> ${{ apartment.rent }}</p>
+        <hr>
+
+        <form method="POST">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">Submit Booking</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

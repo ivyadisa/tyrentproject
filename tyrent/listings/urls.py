@@ -12,4 +12,6 @@ urlpatterns = [
     path('apartments/<int:pk>/edit/', views.edit_apartment, name='edit_apartment'),
     path('apartments/<int:pk>/update_status/', views.update_apartment_status, name='update_apartment_status'),
     path('search/', views.search_properties, name='search_properties'),
+    path('apartment/<int:pk>/', views.apartment_detail, name='apartment_detail'),
+
 ]

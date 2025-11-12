@@ -12,4 +12,5 @@ urlpatterns = [
     path('admin/', views.admin_dashboard, name='admin_dashboard'),
     path('landlord/setup/', views.landlord_setup, name='landlord_setup'),
     path('landlord/upload-house/', views.upload_house, name='upload_house'),
+    path('tenant/dashboard/', views.tenant_dashboard, name='tenant_dashboard'),
 ]

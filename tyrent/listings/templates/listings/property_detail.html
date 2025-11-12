@@ -1,38 +1,46 @@
 {% extends 'base.html' %}
-{% block title %}{{ property.title }}{% endblock %}
+{% load static %}
+{% block title %}{{ property.title }} | Tyrent{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
+
+    <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2 class="text-success">{{ property.title }}</h2>
-        <a href="{% url 'add_apartment' property.pk %}" class="btn btn-success">Add Apartment</a>
+        {% if user.is_authenticated and user.role == "LANDLORD" %}
+            <a href="{% url 'add_apartment' property.pk %}" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Add Apartment
+            </a>
+        {% endif %}
     </div>
 
-    <div class="row mb-3">
+    <!-- Property Info -->
+    <div class="row mb-4">
         <div class="col-md-6">
-            <img src="{{ property.main_image.url }}" class="img-fluid rounded shadow-sm">
+            {% if property.main_image %}
+                <img src="{{ property.main_image.url }}" class="img-fluid rounded shadow-sm" alt="Property Image">
+            {% else %}
+                <img src="{% static 'images/default_property.jpg' %}" class="img-fluid rounded shadow-sm" alt="Default Property">
+            {% endif %}
         </div>
         <div class="col-md-6">
-            <p>{{ property.description }}</p>
-            <p>Status: 
-                {% if property.status == 'Vacant' %}
-                    <span class="badge" style="background-color:#2E8B57;">Vacant</span>
-                {% else %}
-                    <span class="badge bg-danger">Occupied</span>
-                {% endif %}
-            </p>
-            <p>Total Units: {{ property.total_units }}</p>
-            <p>Vacancy Rate: {{ property.vacancy_rate|floatformat:1 }}%</p>
-            <p>Occupancy Rate: {{ property.occupancy_rate|floatformat:1 }}%</p>
+            <p>{{ property.description|default:"No description available." }}</p>
+            <p><strong>Total Units:</strong> {{ property.total_units }}</p>
+            <p><strong>Vacancy Rate:</strong> {{ property.vacancy_rate|floatformat:1 }}%</p>
+            <p><strong>Occupancy Rate:</strong> {{ property.occupancy_rate|floatformat:1 }}%</p>
         </div>
     </div>
 
+    <!-- Apartments Table -->
     <h4 class="text-success mb-3">Apartments</h4>
     <div class="table-responsive">
         <table class="table table-bordered align-middle">
             <thead class="table-success">
                 <tr>
                     <th>Unit</th>
+                    <th>Location</th>
+                    <th>Bedrooms</th>
                     <th>Rent (KES)</th>
                     <th>Status</th>
                     <th>Tenant</th>
@@ -43,7 +51,9 @@
                 {% for apt in apartments %}
                 <tr>
                     <td>{{ apt.unit_number }}</td>
-                    <td>{{ apt.rent }}</td>
+                    <td>{{ apt.location }}</td>
+                    <td>{{ apt.bedrooms }}</td>
+                    <td>{{ apt.rent|floatformat:0 }}</td>
                     <td>
                         {% if apt.status == 'Vacant' %}
                             <span class="badge" style="background-color:#2E8B57;">Vacant</span>
@@ -51,19 +61,38 @@
                             <span class="badge bg-danger">Occupied</span>
                         {% endif %}
                     </td>
-                    <td>{{ apt.tenant_name }}</td>
+                    <td>{{ apt.tenant_name|default:"-" }}</td>
+
+                    <!-- Actions -->
                     <td class="d-flex gap-1 flex-wrap">
-                        <a href="{% url 'edit_apartment' apt.pk %}" class="btn btn-warning btn-sm flex-grow-1">Edit</a>
-                        <a href="{% url 'update_apartment_status' apt.pk %}" class="btn btn-success btn-sm flex-grow-1">Update Status</a>
+                        <a href="{% url 'apartment_detail' apt.pk %}" class="btn btn-info btn-sm flex-grow-1">
+                            <i class="bi bi-eye"></i> View
+                        </a>
+                        {% if user.is_authenticated and user.role == "LANDLORD" %}
+                            <a href="{% url 'edit_apartment' apt.pk %}" class="btn btn-warning btn-sm flex-grow-1">
+                                <i class="bi bi-pencil-square"></i> Edit
+                            </a>
+                            <a href="{% url 'update_apartment_status' apt.pk %}" class="btn btn-success btn-sm flex-grow-1">
+                                <i class="bi bi-arrow-repeat"></i> Update Status
+                            </a>
+                        {% endif %}
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5" class="text-muted text-center">No apartments added yet.</td>
+                    <td colspan="7" class="text-muted text-center">No apartments added yet.</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+
+    
+    {% if not user.is_authenticated %}
+        <div class="alert alert-info mt-4 text-center">
+            Login as a <strong>tenant</strong> to book an apartment.
+        </div>
+    {% endif %}
+
 </div>
 {% endblock %}
