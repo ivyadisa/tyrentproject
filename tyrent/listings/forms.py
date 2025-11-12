@@ -5,14 +5,19 @@ class PropertyForm(forms.ModelForm):
     class Meta:
         model = Property
         fields = ['title', 'description', 'property_type', 'address', 'main_image']
-        widgets = {
-            'description': forms.Textarea(attrs={'rows': 3}),
-        }
 
 class ApartmentForm(forms.ModelForm):
     class Meta:
         model = Apartment
-        fields = ['unit_number', 'location', 'bedrooms', 'rent', 'status', 'tenant_name', 'notes']
+        fields = ['title', 'unit_number', 'bedrooms', 'rent', 'location', 'status', 'tenant_name', 'notes', 'image', 'video']
         widgets = {
-            'notes': forms.Textarea(attrs={'rows': 2}),
+            'description': forms.Textarea(attrs={'rows': 3}),
+        }
+
+class VacantHouseForm(forms.ModelForm):
+    class Meta:
+        model = Apartment
+        fields = ['property', 'title', 'description', 'rent', 'image', 'video']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 3}),
         }

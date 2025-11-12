@@ -1,7 +1,8 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.db.models import Q, Avg
+from django.db.models import Avg
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from .models import Property, Apartment
 from .forms import PropertyForm, ApartmentForm
 
@@ -9,20 +10,22 @@ from .forms import PropertyForm, ApartmentForm
 def home(request):
     """Homepage with featured properties, stats, and search."""
 
-    # Calculate total stats
+    # Total stats
     total_properties = Property.objects.count()
     total_units = Apartment.objects.count()
     occupied_units = Apartment.objects.filter(status='Occupied').count()
     vacant_units = total_units - occupied_units
 
-    occupancy_rate = round((occupied_units / total_units) * 100, 1) if total_units > 0 else 0
-    vacancy_rate = 100 - occupancy_rate if total_units > 0 else 0
+    occupancy_rate = round((occupied_units / total_units) * 100, 1) if total_units else 0
+    vacancy_rate = 100 - occupancy_rate if total_units else 0
 
     # Featured properties (first 6)
     properties = Property.objects.all()[:6]
+
     # Add average rent to each property
     for prop in properties:
         prop.avg_rent = prop.apartments.aggregate(avg_rent=Avg('rent'))['avg_rent'] or 0
+        prop.status = "Vacant" if prop.apartments.filter(status="Vacant").exists() else "Occupied"
 
     context = {
         'total_properties': total_properties,
@@ -33,9 +36,12 @@ def home(request):
     }
     return render(request, 'core/home.html', context)
 
-# ---------- PROPERTY VIEWS ----------
+
+# ---------- PROPERTY MANAGEMENT ----------
+
+@login_required
 def property_list(request):
-    """Show all properties or search results."""
+    """Show all properties or filtered search results."""
     location = request.GET.get('location', '')
     property_type = request.GET.get('property_type', '')
     max_price = request.GET.get('max_price', '')
@@ -53,7 +59,7 @@ def property_list(request):
         except ValueError:
             pass
 
-    # Add avg_rent and a simple status field
+    # Add avg_rent and status
     for prop in properties:
         prop.avg_rent = prop.apartments.aggregate(avg_rent=Avg('rent'))['avg_rent'] or 0
         prop.status = "Vacant" if prop.apartments.filter(status="Vacant").exists() else "Occupied"
@@ -63,17 +69,23 @@ def property_list(request):
         'user': request.user
     })
 
-# ---------- PROPERTY MANAGEMENT (LOGIN REQUIRED) ----------
+
 @login_required
 def add_property(request):
+    """Landlord adds a new property."""
+    landlord = request.user
     if request.method == 'POST':
         form = PropertyForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
-            return redirect('property_list')
+            property = form.save(commit=False)
+            property.landlord = landlord
+            property.save()
+            messages.success(request, "Property uploaded successfully!")
+            return redirect('landlord_dashboard')
     else:
         form = PropertyForm()
     return render(request, 'listings/property_form.html', {'form': form, 'model_name': 'Property', 'is_edit': False})
+
 
 @login_required
 def edit_property(request, pk):
@@ -82,18 +94,36 @@ def edit_property(request, pk):
         form = PropertyForm(request.POST, request.FILES, instance=property)
         if form.is_valid():
             form.save()
+            messages.success(request, "Property updated successfully!")
             return redirect('property_detail', pk=property.pk)
     else:
         form = PropertyForm(instance=property)
     return render(request, 'listings/property_form.html', {'form': form, 'model_name': 'Property', 'is_edit': True})
 
+
 @login_required
 def delete_property(request, pk):
     property = get_object_or_404(Property, pk=pk)
     property.delete()
+    messages.success(request, "Property deleted successfully!")
     return redirect('property_list')
 
-# ---------- APARTMENT MANAGEMENT (LOGIN REQUIRED) ----------
+
+@login_required
+def property_detail(request, pk):
+    property = get_object_or_404(Property, pk=pk)
+    apartments = property.apartments.all()
+    property.avg_rent = property.apartments.aggregate(avg_rent=Avg('rent'))['avg_rent'] or 0
+    property.status = "Vacant" if property.apartments.filter(status="Vacant").exists() else "Occupied"
+    context = {
+        'property': property,
+        'apartments': apartments,
+    }
+    return render(request, 'listings/property_detail.html', context)
+
+
+# ---------- APARTMENT MANAGEMENT ----------
+
 @login_required
 def add_apartment(request, property_pk):
     property = get_object_or_404(Property, pk=property_pk)
@@ -103,10 +133,12 @@ def add_apartment(request, property_pk):
             apartment = form.save(commit=False)
             apartment.property = property
             apartment.save()
+            messages.success(request, "Apartment added successfully!")
             return redirect('property_detail', pk=property.pk)
     else:
         form = ApartmentForm()
     return render(request, 'listings/apartment_form.html', {'form': form, 'property': property, 'model_name': 'Apartment', 'is_edit': False})
+
 
 @login_required
 def edit_apartment(request, pk):
@@ -115,10 +147,12 @@ def edit_apartment(request, pk):
         form = ApartmentForm(request.POST, instance=apartment)
         if form.is_valid():
             form.save()
+            messages.success(request, "Apartment updated successfully!")
             return redirect('property_detail', pk=apartment.property.pk)
     else:
         form = ApartmentForm(instance=apartment)
     return render(request, 'listings/apartment_form.html', {'form': form, 'property': apartment.property, 'model_name': 'Apartment', 'is_edit': True})
+
 
 @login_required
 def update_apartment_status(request, pk):
@@ -129,27 +163,19 @@ def update_apartment_status(request, pk):
         apartment.status = 'Occupied' if status == 'Occupied' else 'Vacant'
         apartment.tenant_name = tenant_name if status == 'Occupied' else ''
         apartment.save()
+        messages.success(request, "Apartment status updated!")
         return redirect('property_detail', pk=apartment.property.pk)
     return render(request, 'listings/update_apartment_status.html', {'apartment': apartment})
 
-@login_required
-def property_detail(request, pk):
-    property = get_object_or_404(Property, pk=pk)
-    apartments = property.apartments.all()  
-    property.avg_rent = property.apartments.aggregate(avg_rent=Avg('rent'))['avg_rent'] or 0
-    property.status = "Vacant" if property.apartments.filter(status="Vacant").exists() else "Occupied"
 
-    context = {
-        'property': property,
-        'apartments': apartments,
-    }
-    return render(request, 'listings/property_detail.html', context)
+@login_required
+def apartment_detail(request, pk):
+    apartment = get_object_or_404(Apartment, pk=pk)
+    return render(request, 'listings/apartment_detail.html', {'apartment': apartment})
 
 
 # ---------- AJAX SEARCH ----------
 def search_properties(request):
-    """AJAX search for properties by location, type, max price."""
-
     location = request.GET.get('location', '')
     property_type = request.GET.get('property_type', '')
     max_price = request.GET.get('max_price', '')
@@ -176,9 +202,3 @@ def search_properties(request):
     } for p in properties]
 
     return JsonResponse({'results': results})
-
-@login_required
-def apartment_detail(request, pk):
-    apartment = get_object_or_404(Apartment, pk=pk)
-    return render(request, 'listings/apartment_detail.html', {'apartment': apartment})
-

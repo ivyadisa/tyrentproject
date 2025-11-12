@@ -32,8 +32,48 @@
         </div>
     </div>
 
-    <!-- Apartments Table -->
+    <!-- Apartments Section -->
     <h4 class="text-success mb-3">Apartments</h4>
+
+    <!-- Apartment Cards with Media -->
+    <div class="row mb-4">
+        {% for apartment in apartments %}
+        <div class="col-md-4 mb-4">
+            <div class="card border-0 shadow-sm">
+                {% if apartment.image %}
+                    <img src="{{ apartment.image.url }}" class="card-img-top" style="height:220px; object-fit:cover;" alt="{{ apartment.title }}">
+                {% else %}
+                    <img src="{% static 'images/default-property.jpg' %}" class="card-img-top" style="height:220px; object-fit:cover;" alt="No image">
+                {% endif %}
+                <div class="card-body">
+                    <h5>{{ apartment.title }}</h5>
+                    <p class="text-success">KES {{ apartment.rent|floatformat:0 }}</p>
+                    <p>Status: 
+                        <span class="badge {% if apartment.status == 'Vacant' %}bg-success{% else %}bg-secondary{% endif %}">
+                            {{ apartment.status }}
+                        </span>
+                    </p>
+                    {% if apartment.video %}
+                        <video width="100%" height="200" controls>
+                            <source src="{{ apartment.video.url }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    {% endif %}
+                    {% if user.is_authenticated and user.role == "TENANT" and apartment.status == "Vacant" %}
+                        <a href="{% url 'book_apartment' apartment.pk %}" class="btn btn-success btn-sm mt-2">Book Now</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center text-muted">
+            No apartments added yet.
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Apartments Table (Optional for Landlord Management) -->
+    {% if user.is_authenticated and user.role == "LANDLORD" %}
     <div class="table-responsive">
         <table class="table table-bordered align-middle">
             <thead class="table-success">
@@ -56,38 +96,27 @@
                     <td>{{ apt.rent|floatformat:0 }}</td>
                     <td>
                         {% if apt.status == 'Vacant' %}
-                            <span class="badge" style="background-color:#2E8B57;">Vacant</span>
+                            <span class="badge bg-success">Vacant</span>
                         {% else %}
                             <span class="badge bg-danger">Occupied</span>
                         {% endif %}
                     </td>
                     <td>{{ apt.tenant_name|default:"-" }}</td>
-
-                    <!-- Actions -->
                     <td class="d-flex gap-1 flex-wrap">
-                        <a href="{% url 'apartment_detail' apt.pk %}" class="btn btn-info btn-sm flex-grow-1">
-                            <i class="bi bi-eye"></i> View
+                        <a href="{% url 'edit_apartment' apt.pk %}" class="btn btn-warning btn-sm flex-grow-1">
+                            <i class="bi bi-pencil-square"></i> Edit
                         </a>
-                        {% if user.is_authenticated and user.role == "LANDLORD" %}
-                            <a href="{% url 'edit_apartment' apt.pk %}" class="btn btn-warning btn-sm flex-grow-1">
-                                <i class="bi bi-pencil-square"></i> Edit
-                            </a>
-                            <a href="{% url 'update_apartment_status' apt.pk %}" class="btn btn-success btn-sm flex-grow-1">
-                                <i class="bi bi-arrow-repeat"></i> Update Status
-                            </a>
-                        {% endif %}
+                        <a href="{% url 'update_apartment_status' apt.pk %}" class="btn btn-success btn-sm flex-grow-1">
+                            <i class="bi bi-arrow-repeat"></i> Update Status
+                        </a>
                     </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="7" class="text-muted text-center">No apartments added yet.</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+    {% endif %}
 
-    
     {% if not user.is_authenticated %}
         <div class="alert alert-info mt-4 text-center">
             Login as a <strong>tenant</strong> to book an apartment.

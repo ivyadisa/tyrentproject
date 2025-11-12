@@ -2,14 +2,9 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 import uuid
 
+# ------------------- CUSTOM USER -------------------
 
 class User(AbstractUser):
-    """
-    Custom User model for Tyrent System accounts app.
-    Extends Django's AbstractUser with UUID primary key,
-    user role management, verification, and status tracking.
-    """
-
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     username = models.CharField(max_length=50, unique=True)
     email = models.EmailField(unique=True)
@@ -58,10 +53,9 @@ class User(AbstractUser):
         return f"{self.full_name} ({self.role})"
 
 
+# ------------------- TENANT PROFILE -------------------
+
 class TenantProfile(models.Model):
-    """
-    Extended profile for tenants — linked one-to-one with User.
-    """
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='tenant_profile')
     current_address = models.CharField(max_length=255, null=True, blank=True)
     preferred_location = models.CharField(max_length=255, null=True, blank=True)
@@ -71,29 +65,32 @@ class TenantProfile(models.Model):
         return f"Tenant Profile: {self.user.full_name}"
 
 
+# ------------------- LANDLORD PROFILE -------------------
+
 class LandlordProfile(models.Model):
-    """
-    Extended profile for landlords — linked one-to-one with User.
-    """
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='landlord_profile')
     property_name = models.CharField(max_length=255, null=True, blank=True)
     company_name = models.CharField(max_length=255, null=True, blank=True)
     business_permit_number = models.CharField(max_length=100, null=True, blank=True)
     address = models.CharField(max_length=255, null=True, blank=True)
-    national_id = models.CharField(max_length=20, null=True, blank=True)  # added this field
+    national_id = models.CharField(max_length=20, null=True, blank=True)
 
     def __str__(self):
         return f"Landlord Profile: {self.user.full_name}"
 
+
+# ------------------- VACANT HOUSE -------------------
+
 def house_image_upload_path(instance, filename):
     """
-    File will be uploaded to MEDIA_ROOT/houses/<landlord_id>/<filename>
+    File will be uploaded to MEDIA_ROOT/houses/<landlord_user_id>/<filename>
     """
     return f'houses/{instance.landlord.user.id}/{filename}'
 
+
 class VacantHouse(models.Model):
     landlord = models.ForeignKey(
-        'accounts.LandlordProfile',  
+        LandlordProfile,
         on_delete=models.CASCADE,
         related_name='houses'
     )
